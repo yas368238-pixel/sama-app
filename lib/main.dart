@@ -28,7 +28,6 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
   final TextEditingController _controller = TextEditingController();
   String? _imageUrl;
   bool _isLoading = false;
-  bool _hasError = false;
 
   void _generateImage() {
     final text = _controller.text.trim();
@@ -36,9 +35,9 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
 
     setState(() {
       _isLoading = true;
-      _hasError = false;
+      // استفاده از سرویس ایمن‌تر و سریع‌تر برای تولید تصویر
       final encodedText = Uri.encodeComponent(text);
-      _imageUrl = 'https://pollinations.ai/p/$encodedText?width=1024&height=1024&seed=${DateTime.now().millisecondsSinceEpoch}';
+      _imageUrl = 'https://image.pollinations.ai/prompt/$encodedText?nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}';
     });
   }
 
@@ -61,36 +60,46 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: _isLoading
+                child: _isLoading && _imageUrl == null
                     ? const Center(child: CircularProgressIndicator())
                     : _imageUrl == null
                         ? const Center(child: Text('متن خود را وارد کرده و دکمه خلق تصویر را بزنید.'))
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              _imageUrl!,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) {
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (_isLoading) setState(() => _isLoading = false);
-                                  });
-                                  return child;
-                                }
-                                return const Center(child: CircularProgressIndicator());
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  if (_isLoading || !_hasError) {
-                                    setState(() {
-                                      _isLoading = false;
-                                      _hasError = true;
-                                    });
-                                  }
-                                });
-                                return const Center(child: Text('خطا در دریافت تصویر از سرور. دوباره تلاش کنید.'));
-                              },
-                            ),
+                        : Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              if (_isLoading)
+                                const CircularProgressIndicator(),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.network(
+                                  _imageUrl!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) {
+                                      if (_isLoading) {
+                                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                                          setState(() => _isLoading = false);
+                                        });
+                                      }
+                                      return child;
+                                    }
+                                    return const Center(child: CircularProgressIndicator());
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    if (_isLoading) {
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        setState(() => _isLoading = false);
+                                      });
+                                    }
+                                    return const Center(
+                                      child: Text('خطا در دریافت تصویر. فیلترشکن را بررسی کنید.'),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
               ),
             ),
@@ -99,7 +108,7 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
               controller: _controller,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'توصیف تصویر مورد نظر به فارسی یا انگلیسی...',
+                hintText: 'توصیف تصویر (فارسی یا انگلیسی)...',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
@@ -122,4 +131,3 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
     );
   }
 }
-
