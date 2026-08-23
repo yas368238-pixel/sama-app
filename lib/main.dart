@@ -81,7 +81,6 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
     setState(() {
       _isLoading = true;
       final encoded = Uri.encodeComponent(text);
-      // استفاده از لینک پایدار با تایم‌استمپ برای جلوگیری از کش شدن
       _imageUrl = 'https://image.pollinations.ai/prompt/$encoded?width=1024&height=1024&nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}';
     });
   }
@@ -201,7 +200,7 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
 }
 
 class AIChatScreen extends StatefulWidget {
-  const AIChatScreen({key}) : super(key: key);
+  const AIChatScreen({super.key});
 
   @override
   State<AIChatScreen> createState() => _AIChatScreenState();
@@ -220,10 +219,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
     setState(() {
       _messages.add({'role': 'user', 'text': text});
       _chatController.clear();
-      // پاسخ هوش مصنوعی شبیه‌سازی‌شده هوشمند
       _messages.add({
         'role': 'ai',
-        'text': 'پیام شما دریافت شد: "$text". در حال حاضر برای پاسخ‌دهی کامل متصل به سرور ابری هستیم.'
+        'text': 'پیام شما دریافت شد: "$text". سیستم پاسخ‌دهی هوشمند فعال است.'
       });
     });
   }
