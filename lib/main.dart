@@ -11,51 +11,8 @@ class SamaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
-        primaryColor: Colors.blueAccent,
-      ),
-      home: const MainScreen(),
-    );
-  }
-}
-
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const ImageGeneratorScreen(),
-    const AIChatScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: const Color(0xFF1E293B),
-        selectedItemColor: Colors.blueAccent,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.image),
-            label: 'خلق تصویر',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'چت هوشمند',
-          ),
-        ],
-      ),
+      theme: ThemeData.dark(),
+      home: const ImageGeneratorScreen(),
     );
   }
 }
@@ -68,9 +25,7 @@ class ImageGeneratorScreen extends StatefulWidget {
 }
 
 class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
-  final TextEditingController _controller = TextEditingController(
-    text: 'یک کارآفرین جوان در یک دفتر مدرن',
-  );
+  final TextEditingController _controller = TextEditingController();
   String? _imageUrl;
   bool _isLoading = false;
 
@@ -80,8 +35,8 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
 
     setState(() {
       _isLoading = true;
-      final encoded = Uri.encodeComponent(text);
-      _imageUrl = 'https://image.pollinations.ai/prompt/$encoded?width=1024&height=1024&nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}';
+      final encodedText = Uri.encodeComponent(text);
+      _imageUrl = 'https://image.pollinations.ai/prompt/$encodedText?nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}';
     });
   }
 
@@ -89,9 +44,8 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('هوش مصنوعی سما - تصویرساز'),
+        title: const Text('هوش مصنوعی سما'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1E293B),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -101,21 +55,15 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: Colors.white10,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: _imageUrl == null
-                    ? const Center(
-                        child: Text(
-                          'متن خود را وارد کرده و دکمه را بزنید',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      )
-                    : Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          ClipRRect(
+                child: _isLoading && _imageUrl == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : _imageUrl == null
+                        ? const Center(child: Text('متن خود را وارد کرده و خلق تصویر را بزنید.'))
+                        : ClipRRect(
                             borderRadius: BorderRadius.circular(16),
                             child: Image.network(
                               _imageUrl!,
@@ -140,38 +88,20 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                                   });
                                 }
                                 return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'خطا در ارتباط با سرور. لطفا فیلترشکن را روشن کنید و دوباره تلاش نمایید.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(color: Colors.redAccent),
-                                    ),
-                                  ),
+                                  child: Text('خطا در دریافت تصویر. فیلترشکن را بررسی کنید.'),
                                 );
                               },
                             ),
                           ),
-                          if (_isLoading)
-                            const CircularProgressIndicator(color: Colors.blueAccent),
-                        ],
-                      ),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _controller,
-              maxLines: 2,
-              style: const TextStyle(color: Colors.white),
+              maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'توصیف تصویر به فارسی...',
-                hintStyle: const TextStyle(color: Colors.grey),
-                filled: true,
-                fillColor: const Color(0xFF1E293B),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: Border.none,
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 12),
@@ -182,114 +112,13 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                 onPressed: _isLoading ? null : _generateImage,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text(
-                  'خلق تصویر',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
+                child: const Text('خلق تصویر', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class AIChatScreen extends StatefulWidget {
-  const AIChatScreen({super.key});
-
-  @override
-  State<AIChatScreen> createState() => _AIChatScreenState();
-}
-
-class _AIChatScreenState extends State<AIChatScreen> {
-  final List<Map<String, String>> _messages = [
-    {'role': 'ai', 'text': 'سلام! من هوش مصنوعی سما هستم. چطور می‌توانم کمکتان کنم؟'}
-  ];
-  final TextEditingController _chatController = TextEditingController();
-
-  void _sendMessage() {
-    final text = _chatController.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() {
-      _messages.add({'role': 'user', 'text': text});
-      _chatController.clear();
-      _messages.add({
-        'role': 'ai',
-        'text': 'پیام شما دریافت شد: "$text". سیستم پاسخ‌دهی هوشمند فعال است.'
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('هوش مصنوعی سما - چت هوشمند'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF1E293B),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                final isUser = msg['role'] == 'user';
-                return Align(
-                  alignment: isUser ? Alignment.centerLeft : Alignment.centerRight,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isUser ? Colors.blueAccent : const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      msg['text']!,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _chatController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'سوال خود را بپرسید...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      filled: true,
-                      fillColor: const Color(0xFF1E293B),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: Border.none,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _sendMessage,
-                  icon: const Icon(Icons.send, color: Colors.blueAccent),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
