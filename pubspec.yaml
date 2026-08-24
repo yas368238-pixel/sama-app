@@ -1,5 +1,5 @@
-name: sama_ai
-description: "Sama AI Image Generator App"
+name: sama_app
+description: "AI Chat App"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,10 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
   http: ^1.2.0
-  google_fonts: ^6.1.0
+  cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_test:
