@@ -1,42 +1,64 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const SamaApp());
+  runApp(const AIChatApp());
 }
 
-class SamaApp extends StatelessWidget {
-  const SamaApp({super.key});
+class AIChatApp extends StatelessWidget {
+  const AIChatApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      home: const ImageGeneratorScreen(),
+      title: 'چت‌بات سما',
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        primaryColor: Colors.deepPurpleAccent,
+      ),
+      home: const ChatScreen(),
     );
   }
 }
 
-class ImageGeneratorScreen extends StatefulWidget {
-  const ImageGeneratorScreen({super.key});
+class ChatMessage {
+  final String text;
+  final bool isUser;
 
-  @override
-  State<ImageGeneratorScreen> createState() => _ImageGeneratorScreenState();
+  ChatMessage({required this.text, required this.isUser});
 }
 
-class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
-  String? _imageUrl;
   bool _isLoading = false;
 
-  void _generateImage() {
+  void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
     setState(() {
+      _messages.add(ChatMessage(text: text, isUser: true));
       _isLoading = true;
-      final encodedText = Uri.encodeComponent(text);
-      _imageUrl = 'https://image.pollinations.ai/prompt/$encodedText?nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}';
+    });
+    _controller.clear();
+
+    // پاسخ شبیه‌سازی‌شده هوش مصنوعی (قابل اتصال به API)
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        _messages.add(ChatMessage(
+          text: 'من چت‌بات سما هستم! پیام شما را دریافت کردم: "$text"\nچطور می‌توانم کمکتان کنم؟',
+          isUser: false,
+        ));
+        _isLoading = false;
+      });
     });
   }
 
@@ -44,81 +66,64 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('هوش مصنوعی سما'),
+        title: const Text('چت‌بات هوش مصنوعی سما'),
         centerTitle: true,
+        backgroundColor: const Color(0xFF1F1F1F),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                return Align(
+                  alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: message.isUser ? Colors.deepPurpleAccent : const Color(0xFF2C2C2C),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      message.text,
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(),
+            ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            color: const Color(0xFF1F1F1F),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
+                  onPressed: _sendMessage,
                 ),
-                child: _isLoading && _imageUrl == null
-                    ? const Center(child: CircularProgressIndicator())
-                    : _imageUrl == null
-                        ? const Center(child: Text('متن خود را وارد کرده و خلق تصویر را بزنید.'))
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              _imageUrl!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) {
-                                  if (_isLoading) {
-                                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                                      if (mounted) setState(() => _isLoading = false);
-                                    });
-                                  }
-                                  return child;
-                                }
-                                return const Center(child: CircularProgressIndicator());
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                if (_isLoading) {
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (mounted) setState(() => _isLoading = false);
-                                  });
-                                }
-                                return const Center(
-                                  child: Text('خطا در دریافت تصویر. فیلترشکن را بررسی کنید.'),
-                                );
-                              },
-                            ),
-                          ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'توصیف تصویر به فارسی...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _generateImage,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      hintText: 'پیام خود را بنویسید...',
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
                 ),
-                child: const Text('خلق تصویر', style: TextStyle(fontSize: 18, color: Colors.white)),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
