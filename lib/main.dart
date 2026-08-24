@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const AIChatApp());
@@ -40,7 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = false;
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
@@ -50,16 +52,36 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _controller.clear();
 
-    // پاسخ شبیه‌سازی‌شده هوش مصنوعی (قابل اتصال به API)
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      final response = await http.post(
+        Uri.parse('https://text.pollinations.ai/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'messages': [
+            {'role': 'system', 'content': 'You are a helpful AI assistant named Sama. Reply concisely in Persian.'},
+            {'role': 'user', 'content': text}
+          ]
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _messages.add(ChatMessage(text: response.body, isUser: false));
+        });
+      } else {
+        setState(() {
+          _messages.add(ChatMessage(text: 'خطا در دریافت پاسخ از سرور.', isUser: false));
+        });
+      }
+    } catch (e) {
       setState(() {
-        _messages.add(ChatMessage(
-          text: 'من چت‌بات سما هستم! پیام شما را دریافت کردم: "$text"\nچطور می‌توانم کمکتان کنم؟',
-          isUser: false,
-        ));
+        _messages.add(ChatMessage(text: 'خطای ارتباط با اینترنت. اتصال خود را بررسی کنید.', isUser: false));
+      });
+    } finally {
+      setState(() {
         _isLoading = false;
       });
-    });
+    }
   }
 
   @override
@@ -108,7 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
-                  onPressed: _sendMessage,
+                  onPressed: _isLoading ? null : _sendMessage,
                 ),
                 Expanded(
                   child: TextField(
@@ -128,4 +150,3 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-
